@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]
+asyncpg
+passlib[bcrypt]
+httpx
+python-dotenv
+pydantic
