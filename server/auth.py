@@ -1,9 +1,20 @@
 """Password verification using passlib bcrypt."""
 
-from passlib.context import CryptContext
+import bcrypt
 
-_pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(
+        password.encode(),
+        bcrypt.gensalt()
+    ).decode()
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return _pwd_context.verify(plain, hashed)
+    try:
+        return bcrypt.checkpw(
+            plain.encode('utf-8'),
+            hashed.encode('utf-8')
+        )
+    except ValueError as e:
+        return False
