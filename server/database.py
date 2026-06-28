@@ -21,14 +21,28 @@ async def create_pool(database_url: str) -> asyncpg.Pool:
         max_size=5,
         init=_init_connection,
     )
-
-
-async def get_user(pool: asyncpg.Pool, user_id: int) -> dict | None:
+    
+async def create_user(pool: asyncpg.Pool, email: str, username: str, password: str):
+    print(password)
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
-            "SELECT id, username, password_hash FROM users WHERE id = $1",
-            user_id,
+            """
+            INSERT INTO users (id, email, username, password_hash)
+            VALUES (nextval('users_id_seq'), $1, $2, $3)
+            ON CONFLICT DO NOTHING
+            RETURNING id
+            """,
+            email, username, password,
         )
+        return row['id'] if row else None
+
+async def get_user(pool: asyncpg.Pool, username: str) -> dict | None:
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT id, username, password_hash FROM users WHERE username = $1",
+            username,
+        )
+        print(row)
         return dict(row) if row else None
 
 

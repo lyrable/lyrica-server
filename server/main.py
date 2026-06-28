@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from config import DATABASE_URL
 from database import create_pool
-from routes import tracks, worker
+from routes import accounts, tracks, worker
 
 
 @asynccontextmanager
@@ -28,6 +28,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(accounts.router, prefix="/accounts", tags=["accounts"])
 app.include_router(tracks.router, prefix="/tracks", tags=["tracks"])
 app.include_router(worker.router, prefix="/worker", tags=["worker"])
 

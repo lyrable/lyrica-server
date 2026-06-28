@@ -14,8 +14,7 @@ router = APIRouter()
 @router.post("/get", response_model=TrackResponse)
 async def get_track(body: TrackRequest, request: Request) -> TrackResponse:
     pool = request.app.state.pool
-
-    user = await get_user(pool, body.user_id)
+    user = await get_user(pool, body.username)
     if user is None:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
