@@ -23,7 +23,6 @@ async def create_pool(database_url: str) -> asyncpg.Pool:
     )
     
 async def create_user(pool: asyncpg.Pool, email: str, username: str, password: str):
-    print(password)
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
             """
@@ -63,8 +62,19 @@ async def get_sync(pool: asyncpg.Pool, track_id: int) -> dict | None:
 async def get_track_by_slug(pool: asyncpg.Pool, slug: str) -> dict | None:
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
-            "SELECT id, title, slug FROM tracks WHERE slug = $1",
+            "SELECT id, title, album_id, slug FROM tracks WHERE slug = $1",
             slug,
+        )
+        return dict(row) if row else None
+    
+
+async def get_album_info(pool: asyncpg.Pool, album_id: str) -> dict | None:
+    if album_id is None:
+        return None
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT id, title, cover_url, release_date, likes, album_type, created_at FROM albums WHERE id = $1",
+            album_id,
         )
         return dict(row) if row else None
 

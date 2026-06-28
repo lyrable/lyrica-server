@@ -8,6 +8,10 @@ class TrackRequest(BaseModel):
     password: str
     slug: str
 
+class TrackRequestAll(BaseModel):
+    username: str
+    password: str
+
 class AccountCreate(BaseModel):
     username: str
     email: str | None = None
@@ -21,7 +25,20 @@ class WorkerResult(BaseModel):
 class TrackResponse(BaseModel):
     status: str
     data: dict | None
+    album: dict | None
+
+class ReturnTracks(BaseModel):
+    status: str
+    data: dict | None = None
 
 class AccountResponse(BaseModel):
     status: str
-    userid: int
+    userid: int | None = None
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+class LoginFeedback(BaseModel):
+    status: bool
+    id: int | None = None
