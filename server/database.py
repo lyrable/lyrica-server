@@ -4,6 +4,8 @@ import json
 
 import asyncpg
 
+from queries.tracklist import TRACKLIST_QUERY
+
 
 async def _init_connection(conn: asyncpg.Connection) -> None:
     await conn.set_type_codec(
@@ -67,6 +69,29 @@ async def get_track_by_slug(pool: asyncpg.Pool, slug: str) -> dict | None:
         )
         return dict(row) if row else None
     
+async def list_tracks(
+    pool: asyncpg.Pool,
+    page: int,
+):
+    offset = (page - 1) * 30
+
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            TRACKLIST_QUERY,
+            offset
+        )
+
+        return [dict(r) for r in rows]
+    
+async def get_tracks_count(pool: asyncpg.Pool) -> int:
+    async with pool.acquire() as conn:
+        count = await conn.fetchval(
+            """
+            SELECT COUNT(*)
+            FROM tracks
+            """
+        )
+        return count
 
 async def get_album_info(pool: asyncpg.Pool, album_id: str) -> dict | None:
     if album_id is None:

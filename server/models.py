@@ -11,6 +11,7 @@ class TrackRequest(BaseModel):
 class TrackRequestAll(BaseModel):
     username: str
     password: str
+    page: int
 
 class AccountCreate(BaseModel):
     username: str
@@ -27,9 +28,22 @@ class TrackResponse(BaseModel):
     data: dict | None
     album: dict | None
 
+class TrackPreview(BaseModel):
+    id: int
+    title: str
+    artists: list[str]
+    duration: float | None
+    album: str | None
+    cover_url: str | None
+    likes: int
+    bpm: float | None
+
+
 class ReturnTracks(BaseModel):
     status: str
-    data: dict | None = None
+    page: int
+    total_pages: int
+    tracks: list[TrackPreview]
 
 class AccountResponse(BaseModel):
     status: str

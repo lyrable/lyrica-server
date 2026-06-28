@@ -9,3 +9,4 @@ load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 WORKER_SECRET = os.getenv("WORKER_SECRET", "").strip()
 WORKER_URL = os.getenv("WORKER_URL", "").strip()
+TRACKS_ON_PAGE = 30
