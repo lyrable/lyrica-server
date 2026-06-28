@@ -33,10 +33,11 @@ class TrackPreview(BaseModel):
     title: str
     artists: list[str]
     duration: float | None
+    bpm: float | None
+    likes: int
     album: str | None
     cover_url: str | None
-    likes: int
-    bpm: float | None
+    primary_color: str | None
 
 
 class ReturnTracks(BaseModel):

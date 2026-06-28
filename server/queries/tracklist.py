@@ -4,20 +4,21 @@ TRACKLIST_QUERY = """SELECT
     t.duration,
     t.bpm,
 
-    a.title AS album,
+    a.title AS album_title,
     a.cover_url,
+    a.primary_color,
 
     COALESCE(s.likes, 0) AS likes,
 
-    string_agg(ar.name, ', ' ORDER BY ar.name) AS artists
+    COALESCE(
+        array_agg(ar.name) FILTER (WHERE ar.name IS NOT NULL),
+        ARRAY[]::text[]
+    ) AS artists
 
 FROM tracks t
 
-LEFT JOIN album_tracks at
-    ON at.track_id = t.id
-
 LEFT JOIN albums a
-    ON a.id = at.album_id
+    ON a.id = t.album_id
 
 LEFT JOIN track_artists ta
     ON ta.track_id = t.id
@@ -38,11 +39,11 @@ GROUP BY
     t.title,
     t.duration,
     t.bpm,
+    t.album_id,
     a.title,
     a.cover_url,
+    a.primary_color,
     s.likes
 
 ORDER BY t.id DESC
-
-LIMIT 30
-OFFSET $1;"""
+LIMIT 30 OFFSET $1;"""

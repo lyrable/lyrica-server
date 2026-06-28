@@ -42,26 +42,13 @@ async def get_track(body: TrackRequest, request: Request) -> TrackResponse:
     return TrackResponse(status="processing", data=None)
 
 @router.post("/list", response_model=ReturnTracks)
-async def list_tracks_endpoint(
-    body: TrackRequestAll,
-    request: Request
-):
-
+async def list_tracks_endpoint(body: TrackRequestAll, request: Request):
     pool = request.app.state.pool
-
     user = await get_user(pool, body.username)
-
-    if user is None or not verify_password(
-        body.password,
-        user["password_hash"]
-    ):
+    if user is None or not verify_password(body.password, user["password_hash"]):
         raise HTTPException(401, "Invalid credentials")
 
-    tracks = await list_tracks(
-        pool,
-        body.page
-    )
-
+    tracks = await list_tracks(pool, body.page)
     total = await get_tracks_count(pool)
 
     return ReturnTracks(
@@ -72,12 +59,13 @@ async def list_tracks_endpoint(
             TrackPreview(
                 id=t["id"],
                 title=t["title"],
-                artists = t["artists"].split(", ") if t["artists"] else [],
+                artists=t["artists"],
                 duration=t["duration"],
-                album=t["album"],
-                cover_url=t["cover_url"],
-                likes=t["likes"],
                 bpm=t["bpm"],
+                likes=t["likes"],
+                album=t["album_title"],
+                cover_url=t["cover_url"],
+                primary_color=t["primary_color"],
             )
             for t in tracks
         ]
