@@ -105,3 +105,38 @@ async def save_sync(pool: asyncpg.Pool, track_id: int, json_data: dict) -> None:
             track_id,
             json_data,
         )
+
+async def get_track_file(pool: asyncpg.Pool, track_id: int) -> dict | None:
+    row = await pool.fetchrow(
+        "SELECT * FROM track_files WHERE track_id = $1",
+        track_id
+    )
+    return dict(row) if row else None
+
+async def save_track_file(
+    pool: asyncpg.Pool,
+    track_id: int,
+    storage_path: str,
+    *,
+    file_size: int | None = None,
+    bitrate: int | None = None,
+    sample_rate: int | None = None,
+    duration: float | None = None,
+) -> int:
+    row = await pool.fetchrow(
+        """
+        INSERT INTO track_files
+            (track_id, storage_path, file_size, format, bitrate, sample_rate, duration)
+        VALUES ($1, $2, $3, 'mp3', $4, $5, $6)
+        ON CONFLICT (track_id) DO UPDATE
+            SET storage_path = EXCLUDED.storage_path,
+                file_size    = COALESCE(EXCLUDED.file_size,    track_files.file_size),
+                bitrate      = COALESCE(EXCLUDED.bitrate,      track_files.bitrate),
+                sample_rate  = COALESCE(EXCLUDED.sample_rate,  track_files.sample_rate),
+                duration     = COALESCE(EXCLUDED.duration,     track_files.duration),
+                uploaded_at  = now()
+        RETURNING id
+        """,
+        track_id, storage_path, file_size, bitrate, sample_rate, duration,
+    )
+    return row["id"]

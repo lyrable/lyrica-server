@@ -7,6 +7,8 @@ class TrackRequest(BaseModel):
     username: str
     password: str
     slug: str
+    artist: str | None
+    title: str | None
 
 class TrackRequestAll(BaseModel):
     username: str
@@ -24,9 +26,9 @@ class WorkerResult(BaseModel):
 
 
 class TrackResponse(BaseModel):
-    status: str
-    data: dict | None
-    album: dict | None
+    status: str  # "ok", "processing", "pending"
+    data: dict | None = None
+    album: dict | None = None
 
 class TrackPreview(BaseModel):
     id: int
@@ -57,3 +59,13 @@ class LoginRequest(BaseModel):
 class LoginFeedback(BaseModel):
     status: bool
     id: int | None = None
+
+class TrackFile(BaseModel):
+    id: int
+    track_id: int
+    storage_path: str
+    file_size: int | None
+    format: str
+    bitrate: int | None
+    sample_rate: int | None
+    duration: float | None

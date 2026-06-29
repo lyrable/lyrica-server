@@ -10,3 +10,5 @@ DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 WORKER_SECRET = os.getenv("WORKER_SECRET", "").strip()
 WORKER_URL = os.getenv("WORKER_URL", "").strip()
 TRACKS_ON_PAGE = 30
+AUDIO_DIR = "/data/audio"
+os.makedirs(AUDIO_DIR, exist_ok=True)

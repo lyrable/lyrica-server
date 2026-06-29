@@ -26,13 +26,13 @@ LEFT JOIN track_artists ta
 LEFT JOIN artists ar
     ON ar.id = ta.artist_id
 
-LEFT JOIN LATERAL (
-    SELECT likes
+LEFT JOIN (
+    SELECT DISTINCT ON (track_id)
+        track_id,
+        likes
     FROM sync_versions
-    WHERE track_id = t.id
-    ORDER BY is_approved DESC, likes DESC
-    LIMIT 1
-) s ON TRUE
+    ORDER BY track_id, is_approved DESC, likes DESC
+) s ON s.track_id = t.id
 
 GROUP BY
     t.id,
