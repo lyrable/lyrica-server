@@ -1,78 +1,42 @@
-# lyrica-server
-server-side for lyrica
+# Lyrica Server — `api.lyricapp.ru / db.lyricapp.ru`
 
-# Installation:
+Серверная часть Lyrica
 
---on server:
-git clone https://github.com/lyrable/lyrica-server
-cd lyrica-server
+Аутентификация — по паре `username/password` в теле каждого запроса (без токенов/сессий), пароли хешируются через `passlib/bcrypt`.
 
---venv
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+## Стек
 
---.env
-cp .env.example .env
-nano .env
-! fill in DATABASE_URL, WORKER_SECRET, WORKER_URL !
+- FastAPI, asyncpg, httpx, passlib/bcrypt
+- nginx + Certbot (HTTPS), systemd (`lyrica.service`)
+- PostgreSQL (домен `db.lyricapp.ru`)
 
---systemcmd launcher
-sudo nano /etc/systemd/system/lyrica.service
+## Эндпоинты
 
---fill in:
-[Unit]
-Description=LyricApp FastAPI Server
-After=network.target
+### `/accounts`
 
-[Service]
-User=your_unix_user
-WorkingDirectory=/home/your_unix_user/lyrica-server
-EnvironmentFile=/home/your_unix_user/lyrica-server/.env
-ExecStart=/home/your_unix_user/lyrica-server/.venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000
-Restart=always
+| Метод | Путь | Тело | Описание |
+|---|---|---|---|
+| POST | `/accounts/create` | `AccountCreate {email, username, password}` | Регистрация. 401 — если юзернейм занят или пароль не передан |
+| POST | `/accounts/login` | `LoginRequest {username, password}` | Логин. 400 — пустые поля, 401 — неверные данные |
 
-[Install]
-WantedBy=multi-user.target
+### `/tracks`
 
---launch:
-sudo systemctl daemon-reload
-sudo systemctl enable lyrica
-sudo systemctl start lyrica
-sudo systemctl status lyrica
+| Метод | Путь | Тело | Описание |
+|---|---|---|---|
+| POST | `/tracks/get` | `TrackRequest {username, password, slug, artist?, title?}` | Возвращает синк трека. Нет трека в БД → асинхронный вызов `worker/process`, ответ `status="processing"`. Трек есть, синка нет → `status="pending"`. Есть синк → `status="ok"` + данные синка и альбома |
+| POST | `/tracks/list` | `TrackRequestAll {username, password, page}` | Пагинированный список треков (размер страницы — `TRACKS_ON_PAGE` из конфига) |
+| GET | `/tracks/audio/{slug}` | — | Отдаёт MP3-файл трека (`FileResponse`). 404 — трек/файл не найден |
 
---nginx setup
-sudo apt install nginx
-sudo nano /etc/nginx/sites-available/lyrica
+### `/worker` (защищено заголовком `X-Worker-Secret`)
 
---fill in:
-server {
-    listen 80;
-    server_name -your-domain;
+| Метод | Путь | Тело | Описание |
+|---|---|---|---|
+| POST | `/worker/result` | `WorkerResult {slug, json_data}` + header `X-Worker-Secret` | Воркер пишет готовый синк (тайминги) в БД |
+| POST | `/worker/upload_audio` | multipart: `file`, `track_id`, `bitrate?`, `sample_rate?`, `duration?` + header `X-Worker-Secret` | Воркер заливает обработанный аудиофайл, путь и метаданные сохраняются в БД |
 
-    location / {
-        proxy_pass http://127.0.0.1:8000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
+## Архитектура БД
+<img width="1216" height="842" alt="5336825447918017879" src="https://github.com/user-attachments/assets/65a33f7c-8e25-45f4-a9e5-89eb64d911d8" />
 
-        # for future websocket (WIP)
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-    }
-}
+## Установка ПО на сервер
 
---next:
-sudo ln -s /etc/nginx/sites-available/lyrica /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl reload nginx
-
-sudo apt install certbot python3-certbot-nginx
-sudo certbot --nginx -d api.yourdomain.ru
-
-sudo apt install python3-venv python3-pip nginx certbot python3-certbot-nginx
-
-# Usage:
-curl -X POST https://api.yourdomain.ru/tracks/get \
-  -H "Content-Type: application/json" \
-  -d '{"user_id": 1, "password": "mypassword", "slug": "author_name"}'
+Текущий набор эндпоинтов **требует** FastAPI, asyncpg, httpx, passlib.
